@@ -115,7 +115,6 @@ func (i *stoneRegular) forceMove(b *board, d dir) {
 	if b.floorShape[pos.y][pos.x] == floorShapeTypeSlipFloor {
 		i.tryMove(b, d)
 	}
-	return
 }
 
 func (i *stoneRegular) setPos(pos point) {

@@ -1,7 +1,5 @@
 package main
 
-// TODO 出口出不去
-
 import (
 	_ "embed"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -11,7 +9,6 @@ import (
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 	"image/color"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -29,18 +26,24 @@ func init() {
 	emptyImage.Fill(color.Black)
 	tt, err := opentype.Parse(ttfFile)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	fontAlpha, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    24,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
+	if err != nil {
+		panic(err)
+	}
 	fontNum, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    48,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 const (
@@ -66,9 +69,9 @@ const (
 	floorShapeTypeEmpty floorShapeType = iota
 	floorShapeTypeSlipFloor
 	floorShapeTypeTransferUp
-	floorShapeTypeTransferLeft
-	floorShapeTypeTransferDown
-	floorShapeTypeTransferRight
+	//floorShapeTypeTransferLeft
+	//floorShapeTypeTransferDown
+	//floorShapeTypeTransferRight
 )
 
 type board struct {
@@ -127,9 +130,7 @@ func newBoard(playerNum int) *board {
 func (b *board) saveCache() {
 	b.pickedPlayerItemCache = b.pickedPlayerItem.pos
 	for i := range b.items {
-		for j := range b.items[i] {
-			b.itemsCache[i][j] = b.items[i][j]
-		}
+		copy(b.itemsCache[i], b.items[i])
 	}
 }
 
@@ -380,25 +381,6 @@ func (b *board) initSlipFloor() {
 
 type point struct {
 	x, y int
-}
-
-func (p point) move(d dir, l int) point {
-	p1 := p
-	for i := 0; i < l; i++ {
-		p2 := p1.moveOne(d)
-		if p2.outOfRange() {
-			p1.x = width - 1 - p1.x
-			p1.y = height - 1 - p1.y
-			p1 = p1.moveOne(d)
-		} else {
-			p1 = p2
-		}
-	}
-	return p1
-}
-
-func (p point) moveOne(d dir) point {
-	return point{p.x + d.x, p.y + d.y}
 }
 
 func (p point) outOfRange() bool {

@@ -13,7 +13,6 @@ import (
 func main() {
 	g := newBoard(2)
 	ebiten.SetWindowSize(1024, 768)
-	ebiten.SetWindowTitle("MyGame")
 	if err := ebiten.RunGame(g); err != nil {
 		logger.Fatal(err)
 	}

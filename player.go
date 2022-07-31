@@ -134,10 +134,6 @@ func (p *playerItem) checkLegal(b *board) bool {
 	return true
 }
 
-func (p *playerItem) setPos(pos point) {
-	p.pos = pos
-}
-
 type player struct {
 	items []*playerItem
 	text  string
@@ -185,6 +181,9 @@ func newPlayer(c color.Color, text string) *player {
 
 func (p *player) display(b *board) {
 	s := fmt.Sprintf("剩余%d张牌，", len(b.monster.deck))
+	if b.monster.lastCard != nil {
+		s = "怪物的上一张牌是" + b.monster.lastCard.text + s
+	}
 	var canMoveItems []int
 	for _, item := range p.items {
 		if !item.alreadyMove && !item.isFinished() && !item.isDead() {
@@ -192,7 +191,7 @@ func (p *player) display(b *board) {
 		}
 	}
 	sort.Ints(canMoveItems)
-	s += p.text
+	s += "轮到" + p.text
 	if canMoveItems != nil {
 		var canMoveItemsString []string
 		for _, item := range canMoveItems {

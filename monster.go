@@ -22,11 +22,11 @@ func init() {
 }
 
 type monster struct {
-	isMoving  bool
-	faceTo    dir
-	pos       point
-	deck      []*card
-	killCount int
+	isMoving bool
+	faceTo   dir
+	pos      point
+	deck     []*card
+	lastCard *card
 }
 
 func (m *monster) Draw() (*ebiten.Image, *ebiten.DrawImageOptions) {
@@ -143,7 +143,6 @@ func (m *monster) chooseDir(b *board) {
 		if minCount > 0 {
 			return
 		}
-		minCount++
 		minDir = down
 	}
 	m.faceTo = minDir
