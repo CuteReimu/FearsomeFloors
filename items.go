@@ -4,14 +4,16 @@ import (
 	"bytes"
 	_ "embed"
 	"github.com/hajimehoshi/ebiten/v2"
-	"golang.org/x/image/colornames"
 	"image"
 	_ "image/png"
 )
 
 type itemInterface interface {
-	drawable
+	Draw() (*ebiten.Image, *ebiten.DrawImageOptions)
 	init(b *board)
+	tryMove(b *board, d dir) bool
+	forceMove(b *board, d dir)
+	setPos(pos point)
 }
 
 var (
@@ -20,16 +22,12 @@ var (
 )
 
 var (
-	imgStone     *ebiten.Image
-	imgSlipFloor *ebiten.Image
+	imgStone *ebiten.Image
 )
 
-func init() {
-	imgSlipFloor = ebiten.NewImage(gridLen, gridLen)
-	imgSlipFloor.Fill(colornames.Red)
+type stoneRegular struct {
+	pos point
 }
-
-type stoneRegular struct{}
 
 func init() {
 	imageStone, _, err := image.Decode(bytes.NewReader(fileStone))
@@ -55,67 +53,71 @@ func (i *stoneRegular) init(b *board) {
 		if b.items[y][x] != nil {
 			continue
 		}
-		b.items[y][x] = i
-		break
-	}
-}
-
-type slipFloor1 struct{}
-
-func (i *slipFloor1) Draw() (*ebiten.Image, *ebiten.DrawImageOptions) {
-	return imgSlipFloor, &ebiten.DrawImageOptions{}
-}
-
-func (i *slipFloor1) init(b *board) {
-	for {
-		x, y := b.random.Intn(width), b.random.Intn(height)
-		if x < 3 && y < 3 || x >= width-2 && y >= height-2 || y-x >= height-4 || x-y >= width-4 {
-			continue
-		}
-		if b.items[y][x] != nil || b.items[y+1][x] != nil || b.items[y][x+1] != nil || b.items[y+1][x+1] != nil {
+		if b.floorShape[y][x] != floorShapeTypeEmpty {
 			continue
 		}
 		b.items[y][x] = i
-		b.items[y+1][x] = i
-		b.items[y][x+1] = i
-		b.items[y+1][x+1] = i
+		i.pos.x, i.pos.y = x, y
 		break
 	}
 }
 
-type slipFloor2 struct{}
-
-func (i *slipFloor2) Draw() (*ebiten.Image, *ebiten.DrawImageOptions) {
-	return imgSlipFloor, &ebiten.DrawImageOptions{}
-}
-
-func (i *slipFloor2) init(b *board) {
-	for {
-		if b.random.Intn(2) == 0 {
-			x, y := b.random.Intn(width), b.random.Intn(height)
-			if x < 3 && y < 3 || x >= width-4 && y >= height-1 || y-x >= height-3 || x-y >= width-6 {
-				continue
+func (i *stoneRegular) tryMove(b *board, d dir) bool {
+	pos := i.pos
+	pos.x += d.x
+	pos.y += d.y
+	if pos.outOfRange() || b.monster.pos == pos || b.floorShape[pos.y][pos.x] >= floorShapeTypeTransferUp || b.items[pos.y][pos.x] != nil {
+		return false
+	}
+	for _, player := range b.player {
+		for _, item := range player.items {
+			if item.pos == pos {
+				return false
 			}
-			if b.items[y][x] != nil || b.items[y][x+1] != nil || b.items[y][x+2] != nil || b.items[y][x+3] != nil {
-				continue
-			}
-			b.items[y][x] = i
-			b.items[y][x+1] = i
-			b.items[y][x+2] = i
-			b.items[y][x+3] = i
-		} else {
-			x, y := b.random.Intn(width), b.random.Intn(height)
-			if x < 3 && y < 3 || x >= width-1 && y >= height-4 || y-x >= height-6 || x-y >= width-3 {
-				continue
-			}
-			if b.items[y][x] != nil || b.items[y+1][x] != nil || b.items[y+2][x] != nil || b.items[y+3][x] != nil {
-				continue
-			}
-			b.items[y][x] = i
-			b.items[y+1][x] = i
-			b.items[y+2][x] = i
-			b.items[y+3][x] = i
 		}
-		break
 	}
+	b.items[i.pos.y][i.pos.x] = nil
+	b.items[pos.y][pos.x] = i
+	i.pos = pos
+	if b.floorShape[pos.y][pos.x] == floorShapeTypeSlipFloor {
+		i.tryMove(b, d)
+	}
+	if i.pos.x == width-1 && i.pos.y == height-1 {
+		b.items[i.pos.y][i.pos.x] = nil
+	}
+	return true
+}
+
+func (i *stoneRegular) forceMove(b *board, d dir) {
+	pos := i.pos
+	pos.x += d.x
+	pos.y += d.y
+	if pos.outOfRange() || b.monster.pos == pos || b.floorShape[pos.y][pos.x] >= floorShapeTypeTransferUp {
+		b.items[i.pos.y][i.pos.x] = nil
+		return
+	}
+	if b.items[pos.y][pos.x] != nil {
+		b.items[pos.y][pos.x].forceMove(b, d)
+	}
+	func() {
+		for _, player := range b.player {
+			for _, item := range player.items {
+				if item.pos == pos {
+					item.forceMove(b, d)
+					return
+				}
+			}
+		}
+	}()
+	b.items[i.pos.y][i.pos.x] = nil
+	b.items[pos.y][pos.x] = i
+	i.pos = pos
+	if b.floorShape[pos.y][pos.x] == floorShapeTypeSlipFloor {
+		i.tryMove(b, d)
+	}
+	return
+}
+
+func (i *stoneRegular) setPos(pos point) {
+	i.pos = pos
 }
