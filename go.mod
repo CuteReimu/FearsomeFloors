@@ -3,11 +3,11 @@ module github.com/CuteReimu/FearsomeFloors
 go 1.17
 
 require (
-	github.com/hajimehoshi/ebiten/v2 v2.4.8
+	github.com/hajimehoshi/ebiten/v2 v2.4.9
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.9.0
-	golang.org/x/image v0.0.0-20220722155232-062f8c9fd539
+	golang.org/x/image v0.1.0
 )
 
 require (
@@ -21,5 +21,5 @@ require (
 	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
 	golang.org/x/mobile v0.0.0-20220722155234-aaac322e2105 // indirect
 	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.4.0 // indirect
 )
